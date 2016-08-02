@@ -114,6 +114,21 @@ pureLitRule (f, asst) = (f', asst ++ pures)
         f' = foldr (eliminatePure . fromLit) f pures
 
 
+-- Unit Propagation
+
+-- Evaluates the formula with all the unit clauses given in argument
+eliminateUnits :: [Lit] -> CNF -> CNF
+eliminateUnits xs f = foldr evalLit f xs
+
+-- Applies the unit propagation rule
+unitPropagate :: (CNF, Assignment) -> (CNF, Assignment)
+unitPropagate (f, asst) =
+  let units = concat $ filter (\xs -> length xs == 1) f in
+    case units of
+      [] -> (f, asst)
+      _ -> unitPropagate (eliminateUnits units f, asst `union` units)
+
+
 
 ----------------------------------------------------------------------
 
