@@ -136,3 +136,6 @@ unitPropagate (f, asst) =
 
 test1 :: CNF
 test1 = [[Neg 1, Pos 2], [Pos 3, Neg 2], [Pos 4, Neg 5], [Pos 5, Neg 4]]
+
+test2 :: CNF
+test2 = [[Pos 1], [Neg 1, Pos 4], [Neg 1, Pos 4]]
