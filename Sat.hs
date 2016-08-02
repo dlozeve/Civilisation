@@ -36,6 +36,23 @@ type Assignment = [Lit]
 
 ----------------------------------------------------------------------
 
+-- General-purpose functions
+
+-- Extracts a variable from a literal
+fromLit :: Lit -> Var
+fromLit (Pos x) = x
+fromLit (Neg x) = x
+
+-- Tests for positive/negative literals
+isPos :: Lit -> Bool
+isPos (Pos _) = True
+isPos (Neg _) = False
+
+isNeg :: Lit -> Bool
+isNeg = not . isPos
+
+----------------------------------------------------------------------
+
 -- Literal Evaluation
 
 -- Negates a literal
