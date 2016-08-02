@@ -82,6 +82,37 @@ testPureLit (Neg x) (c:cs) = Pos x `notElem` c && testPureLit (Neg x) cs
 testPureVar :: Var -> CNF -> Bool
 testPureVar x f = testPureLit (Pos x) f || testPureLit (Neg x) f
 
+-- Given a pure literal (given as a variable), eliminates all the
+-- clauses containing it
+eliminatePure :: Var -> CNF -> CNF
+eliminatePure _ [] = []
+eliminatePure x (c:cs) =
+  if Pos x `elem` c || Neg x `elem` c
+  then eliminatePure x cs
+  else c : eliminatePure x cs
+
+-- Returns the set of positive or negative clauses of a formula
+posLits :: CNF -> [Lit]
+posLits = nub . filter isPos . concat
+
+negLits :: CNF -> [Lit]
+negLits = nub . filter isNeg . concat
+
+-- Returns the set of the pure literals of a formula
+pureLits :: CNF -> [Lit]
+pureLits f = (pos \\ map notLit neg) `union` (neg \\ map notLit pos)
+  where pos = posLits f
+        neg = negLits f
+
+-- Applies the pure literal rule: removes all clauses containing pure
+-- literals. The function also takes a preexisting assignment, and
+-- updates it by appending the value assigned to the eliminated pure
+-- literals.
+pureLitRule :: (CNF, Assignment) -> (CNF, Assignment)
+pureLitRule (f, asst) = (f', asst ++ pures)
+  where pures = pureLits f
+        f' = foldr (eliminatePure . fromLit) f pures
+
 
 
 ----------------------------------------------------------------------
