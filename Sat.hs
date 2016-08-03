@@ -34,6 +34,11 @@ type CNF = [Clause]
 -- is assigned to True.
 type Assignment = [Lit]
 
+-- The result of the SAT solver
+data Result = UNSAT | SAT Assignment deriving (Eq, Show)
+
+
+
 ----------------------------------------------------------------------
 
 -- General-purpose functions
@@ -50,6 +55,16 @@ isPos (Neg _) = False
 
 isNeg :: Lit -> Bool
 isNeg = not . isPos
+
+-- Checks if a clause is always true, i.e. if it contains both a
+-- literal and its negation.
+isClauseTrue :: Clause -> Bool
+isClauseTrue [] = False
+isClauseTrue (x:xs)
+  | notLit x `elem` xs = True
+  | otherwise = isClauseTrue xs
+
+
 
 ----------------------------------------------------------------------
 
@@ -162,6 +177,31 @@ findMatchingPair (c:cs) =
   case findMatchingClause cs c of
     Nothing -> findMatchingPair cs
     Just d -> Just (c, d)
+
+-- Recursively applies the resolution rule to all suitable pairs of
+-- clauses.
+resolveAll :: CNF -> CNF
+resolveAll f = case findMatchingPair f of
+  Nothing -> f
+  Just (c, d) ->
+    case resolve c d of
+      Nothing -> f
+      Just e ->
+        if isClauseTrue e
+        then resolveAll (f \\ [c,d])
+        else resolveAll $ e:(f \\ [c,d])
+
+-- Applies the resolution rule to solve the formula. It recursively
+-- applies resolveAll and the unit propagation and pure literals
+-- rules, until it reaches the empty formula (therefore SAT) or an
+-- empty clause (therefore UNSAT).
+resolutionSolve :: Assignment -> CNF -> Result
+resolutionSolve asst [] = SAT asst
+resolutionSolve asst f
+  | [] `elem` f = UNSAT
+  | otherwise =
+    let (f', asst') = (pureLitRule . unitPropagate) (f, asst) in
+      resolutionSolve asst' (resolveAll f')
 
 
 
