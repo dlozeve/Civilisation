@@ -205,6 +205,32 @@ resolutionSolve (f, asst)
 
 
 
+-- Davis-Putnam-Logemann-Loveland (DPLL)
+
+-- DPLL algorithm, in its most simple form. Applies the unit
+-- propagation rule and the pure literal rule, and then select a
+-- literal (using the selectLit function) and calls itself on the two
+-- possible branches, stopping when a solution is found.
+solveDPLL :: (CNF, Assignment) -> Result
+solveDPLL ([], asst) = SAT (nub asst)
+solveDPLL (f, asst)
+  | [] `elem` f = UNSAT
+  | otherwise = let lit = selectLit f in
+      let (f', asst') = (pureLitRule . unitPropagate) (f, asst) in
+        case solveDPLL (evalLit lit f', lit:asst') of
+          SAT a -> SAT a
+          UNSAT -> let (f'', asst'') = (pureLitRule . unitPropagate) (f, asst) in
+                     solveDPLL (evalLit (notLit lit) f'', notLit lit : asst'')
+
+-- Select a literal from a given formula. This function just takes the
+-- first available literal. The function head makes it unsafe, as it
+-- might fail if the formula is empty or if the first clause is
+-- empty. However, this function is only called by solveDPLL, which
+-- checks beforehand to avoid these cases.
+selectLit :: CNF -> Lit
+selectLit = head . head
+
+
 ----------------------------------------------------------------------
 
 -- Examples for testing purposes
