@@ -129,6 +129,22 @@ unitPropagate (f, asst) =
       _ -> unitPropagate (eliminateUnits units f, asst `union` units)
 
 
+-- Resolution
+
+-- Returns the first common variable between two clauses, if it exists
+commonVar :: Clause -> Clause -> Maybe Lit
+commonVar _ [] = Nothing
+commonVar as (b:bs) = if b `elem` as || notLit b `elem` as
+                      then Just b
+                      else commonVar as bs
+
+-- Applies the resolution rule to two clauses sharing a variable. This
+-- function does not test whether the literals are of different sign.
+resolve :: Clause -> Clause -> Maybe Clause
+resolve a b = do
+  x <- commonVar a b
+  return $ (a \\ [x, notLit x]) `union` (b \\ [x, notLit x])
+
 
 ----------------------------------------------------------------------
 
