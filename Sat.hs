@@ -145,6 +145,25 @@ resolve a b = do
   x <- commonVar a b
   return $ (a \\ [x, notLit x]) `union` (b \\ [x, notLit x])
 
+-- Given a formula and a clause, returns a clause which can be reduced
+-- with the first one by applying the resolution rule.
+findMatchingClause :: CNF -> Clause -> Maybe Clause
+findMatchingClause _ [] = Nothing
+findMatchingClause f (x:xs) =
+  case find (elem $ notLit x) f of
+    Nothing -> findMatchingClause f xs
+    Just c -> Just c
+
+-- Returns a two clauses suitable for the resolution rule, if
+-- possible.
+findMatchingPair :: CNF -> Maybe (Clause, Clause)
+findMatchingPair [] = Nothing
+findMatchingPair (c:cs) =
+  case findMatchingClause cs c of
+    Nothing -> findMatchingPair cs
+    Just d -> Just (c, d)
+
+
 
 ----------------------------------------------------------------------
 
