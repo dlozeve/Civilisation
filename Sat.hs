@@ -195,13 +195,13 @@ resolveAll f = case findMatchingPair f of
 -- applies resolveAll and the unit propagation and pure literals
 -- rules, until it reaches the empty formula (therefore SAT) or an
 -- empty clause (therefore UNSAT).
-resolutionSolve :: Assignment -> CNF -> Result
-resolutionSolve asst [] = SAT asst
-resolutionSolve asst f
+resolutionSolve :: (CNF, Assignment) -> Result
+resolutionSolve ([], asst) = SAT asst
+resolutionSolve (f, asst)
   | [] `elem` f = UNSAT
   | otherwise =
     let (f', asst') = (pureLitRule . unitPropagate) (f, asst) in
-      resolutionSolve asst' (resolveAll f')
+      resolutionSolve (resolveAll f', asst')
 
 
 
