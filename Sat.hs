@@ -219,8 +219,7 @@ solveDPLL (f, asst)
       let (f', asst') = (pureLitRule . unitPropagate) (f, asst) in
         case solveDPLL (evalLit lit f', lit:asst') of
           SAT a -> SAT a
-          UNSAT -> let (f'', asst'') = (pureLitRule . unitPropagate) (f, asst) in
-                     solveDPLL (evalLit (notLit lit) f'', notLit lit : asst'')
+          UNSAT -> solveDPLL (evalLit (notLit lit) f', notLit lit : asst')
 
 -- Select a literal from a given formula. This function just takes the
 -- first available literal. The function head makes it unsafe, as it
