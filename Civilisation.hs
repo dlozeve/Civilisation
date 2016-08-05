@@ -10,7 +10,14 @@ Portability :  portable
 
 -}
 
-module Civilisation where
+module Civilisation (
+  -- * DIMACS CNF parsing
+  parseDIMACS,
+  parseClause,
+  litFromInt,
+  -- * Main
+  main
+  ) where
 
 import Data.Maybe
 

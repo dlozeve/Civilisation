@@ -11,7 +11,47 @@ Portability :  portable
 A simple SAT solver.
 -}
 
-module Sat where
+module Sat (
+  -- * Types
+  -- ** Literals, clauses and formulas
+  Var,
+  Lit(..),
+  Clause,
+  CNF,
+  -- ** Assignments and results
+  Assignment,
+  Result(..),
+  -- * General-purpose functions
+  fromLit,
+  isPos,
+  isNeg,
+  isClauseTrue,
+  notLit,
+  evalLit,
+  -- * Simple rules
+  -- ** Pure literal rule
+  testPureLit,
+  testPureVar,
+  eliminatePure,
+  posLits,
+  negLits,
+  pureLits,
+  pureLitRule,
+  -- ** Unit clause rule
+  eliminateUnits,
+  unitPropagate,
+  -- * Solvers
+  -- ** Resolution-rule solver
+  commonVar,
+  resolve,
+  findMatchingClause,
+  findMatchingPair,
+  resolveAll,
+  resolutionSolve,
+  -- ** DPLL solver
+  solveDPLL,
+  selectLit
+  ) where
 
 import Data.List
 
