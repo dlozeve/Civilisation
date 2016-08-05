@@ -15,26 +15,26 @@ module Sat where
 
 import Data.List
 
--- Variables are represented by positive integers
+-- | Variables are represented by positive integers.
 type Var = Int
 
--- A literal is either a variable, or the negation of a variable
+-- | A literal is either a variable, or the negation of a variable.
 data Lit = Pos Var | Neg Var deriving (Eq, Show)
 
--- A clause is a disjunction of literals, represented by a list of
--- literals
+-- | A clause is a disjunction of literals, represented by a list of
+-- literals.
 type Clause = [Lit]
 
--- A formula, represented in its Conjunctive Normal Form (CNF), is a
--- conjunction of clauses, represented as a list
+-- | A formula, represented in its Conjunctive Normal Form (CNF), is a
+-- conjunction of clauses, represented as a list.
 type CNF = [Clause]
 
--- An assignment is a list of literals. For instance, if an assignment
--- contains (Pos 5), it means that in this assignment, the variable 5
--- is assigned to True.
+-- | An assignment is a list of literals. For instance, if an assignment
+-- contains @Pos 5@, it means that in this assignment, the variable 5
+-- is assigned to @True@.
 type Assignment = [Lit]
 
--- The result of the SAT solver
+-- | The result of the SAT solver.
 data Result = UNSAT | SAT Assignment deriving (Eq, Show)
 
 
@@ -43,20 +43,21 @@ data Result = UNSAT | SAT Assignment deriving (Eq, Show)
 
 -- General-purpose functions
 
--- Extracts a variable from a literal
+-- | Extracts a variable from a literal.
 fromLit :: Lit -> Var
 fromLit (Pos x) = x
 fromLit (Neg x) = x
 
--- Tests for positive/negative literals
+-- | Tests for positive literals.
 isPos :: Lit -> Bool
 isPos (Pos _) = True
 isPos (Neg _) = False
 
+-- | Tests for negative literals.
 isNeg :: Lit -> Bool
 isNeg = not . isPos
 
--- Checks if a clause is always true, i.e. if it contains both a
+-- | Checks if a clause is always true, i.e. if it contains both a
 -- literal and its negation.
 isClauseTrue :: Clause -> Bool
 isClauseTrue [] = False
@@ -70,12 +71,12 @@ isClauseTrue (x:xs)
 
 -- Literal Evaluation
 
--- Negates a literal
+-- | Negates a literal.
 notLit :: Lit -> Lit
 notLit (Pos x) = Neg x
 notLit (Neg x) = Pos x
 
--- Evaluates a CNF by fixing the value of a given literal
+-- | Evaluates a CNF by fixing the value of a given literal.
 evalLit :: Lit -> CNF -> CNF
 evalLit _ [] = []
 evalLit lit f = foldr g [] f
@@ -86,19 +87,19 @@ evalLit lit f = foldr g [] f
 
 -- Pure Literal rule
 
--- Tests whether a literal is pure, i.e. only appears as positive or
--- negative
+-- | Tests whether a literal is pure, i.e. only appears as positive or
+-- negative.
 testPureLit :: Lit -> CNF -> Bool
 testPureLit _ [] = True
 testPureLit (Pos x) (c:cs) = Neg x `notElem` c && testPureLit (Pos x) cs
 testPureLit (Neg x) (c:cs) = Pos x `notElem` c && testPureLit (Neg x) cs
 
--- Tests whether a variable appears only as a pure literal
+-- | Tests whether a variable appears only as a pure literal.
 testPureVar :: Var -> CNF -> Bool
 testPureVar x f = testPureLit (Pos x) f || testPureLit (Neg x) f
 
--- Given a pure literal (given as a variable), eliminates all the
--- clauses containing it
+-- | Given a pure literal (given as a variable), eliminates all the
+-- clauses containing it.
 eliminatePure :: Var -> CNF -> CNF
 eliminatePure _ [] = []
 eliminatePure x (c:cs) =
@@ -106,23 +107,24 @@ eliminatePure x (c:cs) =
   then eliminatePure x cs
   else c : eliminatePure x cs
 
--- Returns the set of positive or negative clauses of a formula
+-- | Returns the set of positive clauses of a formula.
 posLits :: CNF -> [Lit]
 posLits = nub . filter isPos . concat
 
+-- | Returns the set of negative clauses of a formula.
 negLits :: CNF -> [Lit]
 negLits = nub . filter isNeg . concat
 
--- Returns the set of the pure literals of a formula
+-- |Returns the set of the pure literals of a formula.
 pureLits :: CNF -> [Lit]
 pureLits f = (pos \\ map notLit neg) `union` (neg \\ map notLit pos)
   where pos = posLits f
         neg = negLits f
 
--- Applies the pure literal rule: removes all clauses containing pure
--- literals. The function also takes a preexisting assignment, and
--- updates it by appending the value assigned to the eliminated pure
--- literals.
+-- | Applies the pure literal rule: removes all clauses containing
+-- pure literals. The function also takes a preexisting assignment,
+-- and updates it by appending the value assigned to the eliminated
+-- pure literals.
 pureLitRule :: (CNF, Assignment) -> (CNF, Assignment)
 pureLitRule (f, asst) = (f', asst ++ pures)
   where pures = pureLits f
@@ -131,11 +133,12 @@ pureLitRule (f, asst) = (f', asst ++ pures)
 
 -- Unit Propagation
 
--- Evaluates the formula with all the unit clauses given in argument
+-- | Evaluates the formula with all the unit clauses given in
+-- argument.
 eliminateUnits :: [Lit] -> CNF -> CNF
 eliminateUnits xs f = foldr evalLit f xs
 
--- Applies the unit propagation rule
+-- | Applies the unit propagation rule.
 unitPropagate :: (CNF, Assignment) -> (CNF, Assignment)
 unitPropagate (f, asst) =
   let units = concat $ filter (\xs -> length xs == 1) f in
@@ -146,22 +149,24 @@ unitPropagate (f, asst) =
 
 -- Resolution
 
--- Returns the first common variable between two clauses, if it exists
+-- | Returns the first common variable between two clauses, if it
+-- exists.
 commonVar :: Clause -> Clause -> Maybe Lit
 commonVar _ [] = Nothing
 commonVar as (b:bs) = if b `elem` as || notLit b `elem` as
                       then Just b
                       else commonVar as bs
 
--- Applies the resolution rule to two clauses sharing a variable. This
--- function does not test whether the literals are of different sign.
+-- | Applies the resolution rule to two clauses sharing a
+-- variable. This function does not test whether the literals are of
+-- different sign.
 resolve :: Clause -> Clause -> Maybe Clause
 resolve a b = do
   x <- commonVar a b
   return $ (a \\ [x, notLit x]) `union` (b \\ [x, notLit x])
 
--- Given a formula and a clause, returns a clause which can be reduced
--- with the first one by applying the resolution rule.
+-- | Given a formula and a clause, returns a clause which can be
+-- reduced with the first one by applying the resolution rule.
 findMatchingClause :: CNF -> Clause -> Maybe Clause
 findMatchingClause _ [] = Nothing
 findMatchingClause f (x:xs) =
@@ -169,7 +174,7 @@ findMatchingClause f (x:xs) =
     Nothing -> findMatchingClause f xs
     Just c -> Just c
 
--- Returns a two clauses suitable for the resolution rule, if
+-- | Returns a two clauses suitable for the resolution rule, if
 -- possible.
 findMatchingPair :: CNF -> Maybe (Clause, Clause)
 findMatchingPair [] = Nothing
@@ -178,7 +183,7 @@ findMatchingPair (c:cs) =
     Nothing -> findMatchingPair cs
     Just d -> Just (c, d)
 
--- Recursively applies the resolution rule to all suitable pairs of
+-- | Recursively applies the resolution rule to all suitable pairs of
 -- clauses.
 resolveAll :: CNF -> CNF
 resolveAll f = case findMatchingPair f of
@@ -191,10 +196,10 @@ resolveAll f = case findMatchingPair f of
         then resolveAll (f \\ [c,d])
         else resolveAll $ e:(f \\ [c,d])
 
--- Applies the resolution rule to solve the formula. It recursively
+-- | Applies the resolution rule to solve the formula. It recursively
 -- applies resolveAll and the unit propagation and pure literals
--- rules, until it reaches the empty formula (therefore SAT) or an
--- empty clause (therefore UNSAT).
+-- rules, until it reaches the empty formula (therefore @SAT@) or an
+-- empty clause (therefore @UNSAT@).
 resolutionSolve :: (CNF, Assignment) -> Result
 resolutionSolve ([], asst) = SAT asst
 resolutionSolve (f, asst)
@@ -207,7 +212,7 @@ resolutionSolve (f, asst)
 
 -- Davis-Putnam-Logemann-Loveland (DPLL)
 
--- DPLL algorithm, in its most simple form. Applies the unit
+-- | DPLL algorithm, in its most simple form. Applies the unit
 -- propagation rule and the pure literal rule, and then select a
 -- literal (using the selectLit function) and calls itself on the two
 -- possible branches, stopping when a solution is found.
@@ -221,10 +226,10 @@ solveDPLL (f, asst)
           SAT a -> SAT a
           UNSAT -> solveDPLL (evalLit (notLit lit) f', notLit lit : asst')
 
--- Select a literal from a given formula. This function just takes the
--- first available literal. The function head makes it unsafe, as it
--- might fail if the formula is empty or if the first clause is
--- empty. However, this function is only called by solveDPLL, which
+-- | Select a literal from a given formula. This function just takes
+-- the first available literal. The function @head@ makes it unsafe,
+-- as it might fail if the formula is empty or if the first clause is
+-- empty. However, this function is only called by @solveDPLL@, which
 -- checks beforehand to avoid these cases.
 selectLit :: CNF -> Lit
 selectLit = head . head

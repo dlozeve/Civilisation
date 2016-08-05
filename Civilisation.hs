@@ -10,12 +10,14 @@ Portability :  portable
 
 -}
 
+module Civilisation where
+
 import Data.Maybe
 
 import Sat
 
 
--- Main entry point of the program
+-- | Main entry point of the program.
 main :: IO ()
 main = do
   text <- readFile "test.cnf"
@@ -24,11 +26,11 @@ main = do
       UNSAT -> putStrLn "UNSAT"
       SAT a -> putStrLn $ "SAT " ++ show a
 
--- Parses a formula in the DIMACS CNF format.
+-- | Parses a formula in the DIMACS CNF format.
 parseDIMACS :: String -> CNF
 parseDIMACS = mapMaybe parseClause . lines
 
--- Parses a clause (a single line in the DIMACS file).
+-- | Parses a clause (a single line in the DIMACS file).
 parseClause :: String -> Maybe Clause
 parseClause "" = Nothing
 parseClause ('c':_) = Nothing
@@ -37,7 +39,7 @@ parseClause ('%':_) = Nothing
 parseClause ('0':_) = Nothing
 parseClause s = (Just . map (litFromInt . read) . init . words) s
 
--- Interprets an Int, such as (-5), as a Lit, such as (Neg 5).
+-- | Interprets an Int, such as -5, as a @Lit@, such as @Neg 5@.
 litFromInt :: Int -> Lit
 litFromInt n | n < 0 = Neg (-n)
              | otherwise = Pos n
